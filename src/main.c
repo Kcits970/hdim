@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include "byte_sequence.h"
+#include "checksum.h"
 
 int main(int argc, char **argv)
 {
@@ -30,6 +31,16 @@ int main(int argc, char **argv)
                 {
                     goto bad_usage_find;
                 }
+            }
+            if (strcmp(argv[i] + 2, "sha256") == 0)
+            {
+                sha256(f);
+                
+            }
+            if (strcmp(argv[i] + 2, "md5") == 0)
+            {
+                md5(f);
+                
             }
         }
     }
