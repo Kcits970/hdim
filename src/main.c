@@ -3,6 +3,7 @@
 #include <string.h>
 #include "byte_sequence.h"
 #include "checksum.h"
+#include "change_endian.h"
 
 int main(int argc, char **argv)
 {
@@ -42,6 +43,16 @@ int main(int argc, char **argv)
                 md5(f);
                 
             }
+            if (strcmp(argv[i] + 2, "endian") == 0) {
+                if (i + 1 < argc) {
+                    if (strcmp(argv[i + 1], "big_endian") == 0) {
+                        print_as_endian(f, 2, 1);
+                    } else if (strcmp(argv[i + 1], "little_endian") == 0) {
+                        print_as_endian(f, 2, 0);
+                    }
+                }
+            }
+
         }
     }
 
