@@ -1,4 +1,6 @@
-#include "change_endian.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 uint16_t swap16(uint16_t val) {
     return (val >> 8) | (val << 8);
@@ -12,26 +14,36 @@ uint32_t swap32(uint32_t val) {
 }
 
 void print_as_endian(FILE *f, int word_size, int to_big_endian) {
-    unsigned char buf[4];
-    size_t read;
+    unsigned char buf[1024];
+    size_t count;
+    unsigned int row = 0;
 
-    while ((read = fread(buf, 1, word_size, f)) == word_size) {
-        if (word_size == 2) {
-            uint16_t val = buf[0] | (buf[1] << 8);
-            if (to_big_endian) val = swap16(val);
-            printf("%04x ", val);
-        } else if (word_size == 4) {
-            uint32_t val = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
-            if (to_big_endian) val = swap32(val);
-            printf("%08x ", val);
+    while ((count = fread(buf, sizeof(unsigned char), sizeof(buf), f)) > 0) {
+        if (count & 1)
+            buf[count++] = 0;  // 홀수 바이트라면 패딩
+
+        unsigned int off = 0;
+        while (off < count) {
+            fprintf(stdout, "%08x ", row);
+            for (size_t i = 0; i < 0x10 && off + i + word_size - 1 < count; i += word_size) {
+                if (word_size == 2) {
+                    uint16_t val = buf[off + i] | (buf[off + i + 1] << 8);
+                    if (to_big_endian) val = swap16(val);
+                    fprintf(stdout, "%02x%02x ", (val >> 8) & 0xFF, val & 0xFF);
+                } else if (word_size == 4) {
+                    uint32_t val = buf[off + i] | (buf[off + i + 1] << 8) |
+                                    (buf[off + i + 2] << 16) | (buf[off + i + 3] << 24);
+                    if (to_big_endian) val = swap32(val);
+                    fprintf(stdout, "%02x%02x%02x%02x ",
+                            (val >> 24) & 0xFF,
+                            (val >> 16) & 0xFF,
+                            (val >> 8) & 0xFF,
+                            val & 0xFF);
+                }
+            }
+            fprintf(stdout, "\n");
+            row += 0x10;
+            off += 0x10;
         }
     }
-
-    printf("\n");
 }
-
-// 사용 예시:
-// FILE *f = fopen("binary.bin", "rb");
-// print_as_endian(f, 2, 1); // 2바이트 단위, 빅엔디안 출력
-// print_as_endian(f, 4, 0); // 4바이트 단위, 리틀엔디안 출력
-// fclose(f);
