@@ -6,6 +6,7 @@
 void handle_option_d(FILE *f);
 void handle_option_c(FILE *f);
 void handle_option_v(void);
-void handle_option_o(FILE *f, const char *output_file);
+void handle_option_o(FILE *f);
+
 
 #endif // OPTIONS_H
