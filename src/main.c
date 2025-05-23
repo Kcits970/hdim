@@ -13,19 +13,28 @@ int main(int argc, char **argv)
     if (argc < 2)
         goto bad_usage;
 
-    for (int i = 2; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-d") == 0)
-            dump_mode = 1;
-        else if (strcmp(argv[i], "-c") == 0)
-            char_mode = 1;
-        else if (strcmp(argv[i], "-V") == 0)
-            version_mode = 1;
-        else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc)
+    for (int i = 2; i < argc; i++) {
+    if (strcmp(argv[i], "-d") == 0) {
+        dump_mode = 1;
+    } else if (strcmp(argv[i], "-c") == 0) {
+        char_mode = 1;
+    } else if (strcmp(argv[i], "-V") == 0) {
+        version_mode = 1;
+    } else if (strcmp(argv[i], "-o") == 0) {
+        if (i + 1 < argc) {
             output_file = argv[++i];
-        else
-            goto bad_usage;
+        } else {
+            fprintf(stderr, "Error: -o 옵션 뒤에 출력 파일명을 입력해야 합니다.\n");
+            return 1;
+        }
+    } else if (argv[i][0] == '-') {
+        fprintf(stderr, "Unknown option: %s\n", argv[i]);
+        return 1;
+    } else {
+        // 그냥 파일명처럼 생긴 문자열이면 무시 (또는 경고 출력)
+        fprintf(stderr, "Warning: '%s'는 인식되지 않는 인자이며 무시됩니다.\n", argv[i]);
     }
+}
 
     FILE *f = fopen(argv[1], "r");
     if (!f)
