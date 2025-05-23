@@ -7,11 +7,11 @@
 
 int main(int argc, char **argv)
 {
-    int dump_mode = 0, char_mode = 0, version_mode = 0;
+    // 각 기능별 플래그 변수
+    int dump_mode = 0, char_mode = 0, version_mode = 0, octal_mode = 0;
     char *input_file = NULL;
-    char *output_file = NULL;
 
-    // 옵션 및 입력 파일 분석
+    // 인자 파싱 (옵션 순서 무관, -- 지원)
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--d") == 0) {
             dump_mode = 1;
@@ -20,25 +20,23 @@ int main(int argc, char **argv)
         } else if (strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--V") == 0) {
             version_mode = 1;
         } else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--o") == 0) {
-            if (i + 1 < argc) {
-                output_file = argv[++i];
-            } else {
-                fprintf(stderr, "Error: Missing output file after -o option.\n");
-                return 1;
-            }
+            octal_mode = 1;
         } else if (argv[i][0] == '-') {
+            // 정의되지 않은 옵션
             fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
             return 1;
         } else if (input_file == NULL) {
-            input_file = argv[i]; // 옵션이 아닌 첫 번째 인자를 입력 파일로 간주
+            // 첫 번째 옵션이 아닌 인자를 입력 파일로 간주
+            input_file = argv[i];
         } else {
+            // 그 외 불필요한 인자는 경고만 출력
             fprintf(stderr, "Warning: Extra argument '%s' is ignored.\n", argv[i]);
         }
     }
 
-    // 입력 파일 필수
+    // 입력 파일이 없을 경우 사용법 안내
     if (input_file == NULL) {
-        fprintf(stderr, "Usage: ./hdim [-d] [-c] [-V] [-o output_file] <file>\n");
+        fprintf(stderr, "Usage: ./hdim [-d] [-c] [-V] [-o] <file>\n");
         return 1;
     }
 
@@ -50,15 +48,15 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // 각 옵션 실행
+    // 옵션별 기능 실행
     if (dump_mode)
-        handle_option_d(f);
+        handle_option_d(f);       // 2바이트 10진수 출력
     if (char_mode)
-        handle_option_c(f);
+        handle_option_c(f);       // 문자 그대로 출력
     if (version_mode)
-        handle_option_v();
-    if (output_file)
-        handle_option_o(f, output_file);
+        handle_option_v();        // 버전 정보 출력
+    if (octal_mode)
+        handle_option_o(f);       // 2바이트 8진수 출력
 
     fclose(f);
     return 0;

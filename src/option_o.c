@@ -1,20 +1,13 @@
 #include <stdio.h>
 
-void handle_option_o(FILE *f, const char *output_file)
+void handle_option_o(FILE *f)
 {
-    FILE *out = fopen(output_file, "w");
-    if (!out)
-    {
-        perror("Error opening output file");
-        return;
-    }
+    unsigned char buf[2];
 
-    char ch;
-    while ((ch = fgetc(f)) != EOF)
+    while (fread(buf, sizeof(unsigned char), 2, f) == 2)
     {
-        fputc(ch, out); // 원본 파일을 그대로 저장
+        unsigned int value = (buf[0] << 8) | buf[1];
+        printf("%06o ", value); // 6자리 8진수 출력 (앞에 0 포함)
     }
-
-    fclose(out);
-    printf("File saved to %s\n", output_file);
+    printf("\n");
 }
