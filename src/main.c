@@ -11,13 +11,16 @@ int main(int argc, char **argv)
     int dump_mode = 0, char_mode = 0, version_mode = 0, octal_mode = 0;
     char *input_file = NULL;
 
-    // 인자 파싱 (옵션 순서 무관, -- 지원)
+    // 인자 파싱 (옵션 순서 무관, -- 및 소문자 지원)
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--d") == 0) {
             dump_mode = 1;
         } else if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--c") == 0) {
             char_mode = 1;
-        } else if (strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--V") == 0) {
+        } else if (
+            strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--V") == 0 ||
+            strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--v") == 0
+        ) {
             version_mode = 1;
         } else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--o") == 0) {
             octal_mode = 1;
@@ -36,28 +39,44 @@ int main(int argc, char **argv)
 
     // 입력 파일이 없을 경우 사용법 안내
     if (input_file == NULL) {
-        fprintf(stderr, "Usage: ./hdim [-d] [-c] [-V] [-o] <file>\n");
+        fprintf(stderr, "Usage: ./hdim [-d] [-c] [-V|-v] [-o] <file>\n");
         return 1;
     }
 
-    // 파일 열기
-    FILE *f = fopen(input_file, "r");
-    if (!f) {
-        fprintf(stderr, "./hdim: ");
-        perror(input_file);
-        return 1;
+    // 각 옵션별로 파일 새로 열고 닫기
+    if (dump_mode) {
+        FILE *f = fopen(input_file, "r");
+        if (f) {
+            handle_option_d(f);
+            fclose(f);
+        } else {
+            perror("Error opening file for -d");
+        }
     }
 
-    // 옵션별 기능 실행
-    if (dump_mode)
-        handle_option_d(f);       // 2바이트 10진수 출력
-    if (char_mode)
-        handle_option_c(f);       // 문자 그대로 출력
-    if (version_mode)
-        handle_option_v();        // 버전 정보 출력
-    if (octal_mode)
-        handle_option_o(f);       // 2바이트 8진수 출력
+    if (char_mode) {
+        FILE *f = fopen(input_file, "r");
+        if (f) {
+            handle_option_c(f);
+            fclose(f);
+        } else {
+            perror("Error opening file for -c");
+        }
+    }
 
-    fclose(f);
+    if (octal_mode) {
+        FILE *f = fopen(input_file, "r");
+        if (f) {
+            handle_option_o(f);
+            fclose(f);
+        } else {
+            perror("Error opening file for -o");
+        }
+    }
+
+    if (version_mode) {
+        handle_option_v();
+    }
+
     return 0;
 }
