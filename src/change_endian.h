@@ -8,6 +8,6 @@
 uint16_t swap16(uint16_t);
 uint32_t swap32(uint32_t);
 
-void print_as_endian(FILE, int, int);
+void print_as_endian(FILE*, int, int);
 
 #endif
