@@ -1,82 +1,56 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <string.h>
 #include "dump.h"
 #include "options.h"
 
+Op opt = {
+	.rule = 1, // 처음엔 1, 잘못된 경우의 수 한 곳이라도 걸리면 -1로 변해서 오류 
+	.num_of_files = 0, // opt_check에서 .txt로 끝나는 문자열을 읽을 때마다 1씩 증가
+	.option = { "-n", "-C", "-b", "-D", "-d", "-o", "-c", "-v" }, // 존재하는 옵션
+};
+
+D Diff = {
+	.diff_size = 0
+};
+
+
 int main(int argc, char **argv)
 {
-    // 각 기능별 플래그 변수
-    int dump_mode = 0, char_mode = 0, version_mode = 0, octal_mode = 0;
-    char *input_file = NULL;
+	
+	set_opt(argc, argv); // 옵션 세팅
+	
+	if (opt.rule == -1) // set_opt에서 잘못된 입력으로 판단하면 rule에 -1값 저장
+		goto bad_usage;
 
-    // 인자 파싱 (옵션 순서 무관, -- 및 소문자 지원)
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--d") == 0) {
-            dump_mode = 1;
-        } else if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--c") == 0) {
-            char_mode = 1;
-        } else if (
-            strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--V") == 0 ||
-            strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--v") == 0
-        ) {
-            version_mode = 1;
-        } else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--o") == 0) {
-            octal_mode = 1;
-        } else if (argv[i][0] == '-') {
-            // 정의되지 않은 옵션
-            fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
-            return 1;
-        } else if (input_file == NULL) {
-            // 첫 번째 옵션이 아닌 인자를 입력 파일로 간주
-            input_file = argv[i];
-        } else {
-            // 그 외 불필요한 인자는 경고만 출력
-            fprintf(stderr, "Warning: Extra argument '%s' is ignored.\n", argv[i]);
-        }
-    }
-
-    // 입력 파일이 없을 경우 사용법 안내
-    if (input_file == NULL) {
-        fprintf(stderr, "Usage: ./hdim [-d] [-c] [-V|-v] [-o] <file>\n");
-        return 1;
-    }
-
-    // 각 옵션별로 파일 새로 열고 닫기
-    if (dump_mode) {
-        FILE *f = fopen(input_file, "r");
-        if (f) {
-            handle_option_d(f);
-            fclose(f);
-        } else {
-            perror("Error opening file for -d");
-        }
-    }
-
-    if (char_mode) {
-        FILE *f = fopen(input_file, "r");
-        if (f) {
-            handle_option_c(f);
-            fclose(f);
-        } else {
-            perror("Error opening file for -c");
-        }
-    }
-
-    if (octal_mode) {
-        FILE *f = fopen(input_file, "r");
-        if (f) {
-            handle_option_o(f);
-            fclose(f);
-        } else {
-            perror("Error opening file for -o");
-        }
-    }
-
-    if (version_mode) {
+	if (opt.v == 1) {
         handle_option_v();
+		return 0;
     }
 
-    return 0;
+	for(int i=0;i<opt.num_of_files;i++) // 파일의 개수만큼 반복
+	{
+	FILE *f = fopen(argv[opt.files[i]], "r"); //opt.files[i] -> 해당하는 argv의 인덱스
+	if (!f)
+	{
+		fprintf(stderr, "./hdim: ");
+		perror(argv[opt.files[i]]);
+		return 1;
+	}
+	
+	if(opt.c == 1)
+		handle_option_c(f);
+	else if(opt.o == 1)
+		handle_option_o(f);
+	else if(opt.d == 1)
+		handle_option_d(f);
+	else 
+		dump(f);
+
+	fclose(f);
+	}
+	return 0;
+
+bad_usage:
+	fprintf(stderr, "Usage: ./hdim <file>\n");
+	return 1;
 }
