@@ -1,113 +1,142 @@
-#define BUF_SZ 1024
-
 #include <stdio.h>
+#include "args.h"
 #include "dump.h"
-#include "options.h"
 
-unsigned char buf[BUF_SZ];
-
-int read_f = 0;
-
-void dump(FILE *f)
+static inline char to_printable(char ch)
 {
-	size_t count;
-	unsigned int row = 0;
+	if (ch >= ' ' && ch <= '~')
+		return ch;
 
+	return '.';
+}
 
-	while ((count = fread(buf, sizeof(unsigned char), BUF_SZ, f)) > 0 )
+int __dump(struct args_struct *args, char *out)
+{
+	static char buf[1024];
+	static char tmp[16];
+	static const char *space = "                ";
+
+	FILE *f = args->f;
+	int read_sz = fread(buf, sizeof(char), 1024, f);
+	int off = 0, write_sz = 0;
+
+	if (read_sz & 1)
+		buf[read_sz] = 0;
+
+	while (off < read_sz)
 	{
-
-		if (opt.n > 0)       // n 옵션
-			count = opt.n; 
-
-		if (count & 1)
-			buf[count++] = 0;
-		
-		unsigned int off = 0;
-
-		if(opt.D == 1)
+		int len = read_sz-off >= 16 ? 16 : read_sz-off;
+		for (int i = 0; i < 16;)
 		{
-			if(read_f < 2) 
+			if (args->b)
 			{
-				memcpy(Diff.txt_buf[read_f], buf, count);
-				Diff.txt_buf[read_f][count] = '\0';
-				read_f++;
-
-				if(read_f < 2) // D옵션일 경우, 첫번째 파일은 읽고 return 
-					return;
+				sprintf(tmp, "%03o", (unsigned int) buf[off+i]);
+				sprintf(out+write_sz, "%.3s", i < len ? tmp : space);
+				i++, write_sz+=3;
 			}
-		}
+
+			else if (args->c)
+			{
+				out[write_sz++] = i < len ? to_printable(buf[off+i]) : ' ';
+				i++;
+			}
+
+			else if (args->C || args->x)
+			{
+				sprintf(tmp, "%04x", (unsigned int) buf[off+i] << 8 | buf[off+i+1]);
+				sprintf(out+write_sz, "%.4s", i < len ? tmp : space);
+				i+=2, write_sz+=4;
+			}
+
+			else if (args->d)
+			{
+				sprintf(tmp, "%05u", (unsigned int) buf[off+i] << 8 | buf[off+i+1]);
+				sprintf(out+write_sz, "%.5s", i < len ? tmp : space);
+				i+=2, write_sz+=5;
+			}
+
+			else if (args->o)
+			{
+				sprintf(tmp, "%06o", (unsigned int) buf[off+i] << 8 | buf[off+i+1]);
+				sprintf(out+write_sz, "%.6s", i < len ? tmp : space);
+				i+=2, write_sz+=6;
+			}
 			
-		if(read_f == 2) // 두번째 파일이 들어오면 dump_D
-		{
-			dump_D();
-			return;
+			else
+			{
+				// something is wrong if execution happens here...
+			}
 		}
 
-		if(opt.b == 1) // b 옵션
-			dump_b(count, buf);
-		else
+		if (args->C)
 		{
-		while (off < count)
-		{
-			size_t i;
-			fprintf(stdout, "%08x ", row);
-			for (i = 0; i < 0x10 && off + i < count; i += 2)
-			{
-				printf("%02x%02x ", buf[off + i], buf[off + i+1]);
-				if(opt.C == 1) // 16비트 출력마다 해당 줄의 문자열을 출력하기 위해 buf_C에 따로 저장
-				{
-					opt.buf_C[i] = buf[off + i]; 
-					opt.buf_C[i + 1] = buf[off + i + 1];
-				}
-			}
-			if(opt.C == 1)
-			{
-				opt.buf_C[i] = '\0';
-				pad_column(i); // 한 줄에 16비트보다 적을 때 열 정렬 맞추기
-				printf(" |%s|", opt.buf_C);
-			}
-			fprintf(stdout, "\n");
-			row += 0x10, off += 0x10;
+			for (int i = 0; i < 16; i++)
+				out[write_sz++] = i < len ? to_printable(buf[off+i]) : ' ';
 		}
-		}
-	
+
+		off += len;
 	}
+
+	return read_sz;
 }
 
-void dump_b(int count, char buf[])
+int dump(struct args_struct *args)
 {
-	unsigned int row = 0;
-	unsigned int off = 0;
+	static char buf[8192];
 
-	while(off < count)
+	int read_sz = __dump(args, buf);
+	int off = 0, write_sz = 0, row = 0;
+
+	while (off < read_sz)
 	{
-		size_t i;
-		fprintf(stdout, "%08x ", row);  
-		for (i = 0; i < 0x10 && off + i < count; i += 1)
+		for (int i = 0; i < 16;)
 		{
-			printf("%03o ", buf[off+i]);
-			if(opt.C == 1)
-				opt.buf_C[i] = buf[off + i];
-		}
-		if(opt.C == 1)
-		{
-			pad_column(i); // 16비트보다 적을 때 열 정렬 맞추고 문자열 출력
-			opt.buf_C[i] = '\0';
-			printf(" |%s|", opt.buf_C);
-		}
-		fprintf(stdout, "\n");
-		row += 0x10, off += 0x10; 
-		}
-}
+			if (args->b)
+			{
+				printf("%.3s ", buf+write_sz);
+				i++, write_sz+=3;
+			}
 
-void pad_column(int i)
-{
-	if (i < 0x10) {                      
-    	int pad = 0x10 - i;             
-		int g = opt.b ? 1 : 2;
-   		for (int p = 0; p < pad; p+=g) {
-           	printf(opt.b ? "    " : "     ");
-    	}
+			else if (args->c)
+			{
+				putchar(*(buf+write_sz));
+				i++, write_sz++;
+			}
+
+			else if (args->C || args->x)
+			{
+				printf("%.4s ", buf+write_sz);
+				i+=2, write_sz+=4;
+			}
+
+			else if (args->d)
+			{
+				printf("%.5s ", buf+write_sz);
+				i+=2, write_sz+=5;
+			}
+
+			else if (args->o)
+			{
+				printf("%.6s ", buf+write_sz);
+				i+=2, write_sz+=6;
+			}
+
+			else
+			{
+				// execution will never reach this point.
+			}
+		}
+
+		if (args->C)
+		{
+			printf("| ");
+			for (int i = 0; i < 16; i++)
+				putchar(*(buf+write_sz++));
+		}
+
+		putchar('\n');
+		off += 16;
 	}
+
+	return read_sz;
 }
