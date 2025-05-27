@@ -6,6 +6,6 @@
 #include <string.h> 
 #include "args.h"
 
-int dump(struct args_struct*);
+void dump(struct args_struct*);
 
 #endif

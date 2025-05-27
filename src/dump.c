@@ -10,7 +10,7 @@ static inline char __to_printable(char ch)
 	return '.';
 }
 
-int __dump(struct args_struct *args, char *out)
+int dump_buf(struct args_struct *args, char *out)
 {
 	static char buf[1024];
 	static char tmp[16];
@@ -80,11 +80,11 @@ int __dump(struct args_struct *args, char *out)
 	return read_sz;
 }
 
-int dump(struct args_struct *args)
+int dump_part(struct args_struct *args)
 {
 	static char buf[8192];
 
-	int read_sz = __dump(args, buf);
+	int read_sz = dump_buf(args, buf);
 	int off = 0, write_sz = 0, row = 0;
 
 	while (off < read_sz)
@@ -139,4 +139,9 @@ int dump(struct args_struct *args)
 	}
 
 	return read_sz;
+}
+
+void dump(struct args_struct *args)
+{
+	while (dump_part(args));
 }
