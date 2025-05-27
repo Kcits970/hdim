@@ -2,7 +2,7 @@
 #include "args.h"
 #include "dump.h"
 
-static inline char to_printable(char ch)
+static inline char __to_printable(char ch)
 {
 	if (ch >= ' ' && ch <= '~')
 		return ch;
@@ -37,7 +37,7 @@ int __dump(struct args_struct *args, char *out)
 
 			else if (args->c)
 			{
-				out[write_sz++] = i < len ? to_printable(buf[off+i]) : ' ';
+				out[write_sz++] = i < len ? __to_printable(buf[off+i]) : ' ';
 				i++;
 			}
 
@@ -71,7 +71,7 @@ int __dump(struct args_struct *args, char *out)
 		if (args->C)
 		{
 			for (int i = 0; i < 16; i++)
-				out[write_sz++] = i < len ? to_printable(buf[off+i]) : ' ';
+				out[write_sz++] = i < len ? __to_printable(buf[off+i]) : ' ';
 		}
 
 		off += len;
