@@ -45,21 +45,21 @@ int dump_buf(FILE *f, struct args_struct *args, char *out)
 
 			else if (args->C || args->x)
 			{
-				sprintf(tmp, "%04x", (unsigned int) buf[off+i] << 8 | buf[off+i+1]);
+				sprintf(tmp, "%04x", (unsigned int) buf[off+i+1] << 8 | buf[off+i]);
 				sprintf(out+write_sz, "%.4s", i < len ? tmp : space);
 				i+=2, write_sz+=4;
 			}
 
 			else if (args->d)
 			{
-				sprintf(tmp, "%05u", (unsigned int) buf[off+i] << 8 | buf[off+i+1]);
+				sprintf(tmp, "%05u", (unsigned int) buf[off+i+1] << 8 | buf[off+i]);
 				sprintf(out+write_sz, "%.5s", i < len ? tmp : space);
 				i+=2, write_sz+=5;
 			}
 
 			else if (args->o)
 			{
-				sprintf(tmp, "%06o", (unsigned int) buf[off+i] << 8 | buf[off+i+1]);
+				sprintf(tmp, "%06o", (unsigned int) buf[off+i+1] << 8 | buf[off+i]);
 				sprintf(out+write_sz, "%.6s", i < len ? tmp : space);
 				i+=2, write_sz+=6;
 			}
