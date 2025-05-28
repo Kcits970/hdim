@@ -4,56 +4,15 @@
 #include <limits.h>
 #include "args.h"
 
-int args_set_f(struct args_struct *args, char *str)
-{
-	if (args->f)
-		return 0;
-
-	args->f = fopen(str, "r");
-	if (!args->f)
-	{
-		perror("fopen");
-		return 0;
-	}
-
-	return 1;
-}
-
-int args_set_D(struct args_struct *args, char *str)
-{
-	if (args->D)
-		return 0;
-
-	args->D = fopen(str, "r");
-	if (!args->D)
-	{
-		perror("fopen");
-		return 0;
-	}
-
-	return 1;
-}
-
-int args_set_n(struct args_struct *args, char *str)
-{
-	if (args->n)
-		return 0;
-
-	char *ptr;
-	long int n = strtol(str, &ptr, 10);
-	if (*ptr || n <= 0 || n > INT_MAX)
-		return 0;
-
-	args->n = n;
-	return 1;
-}
-
 int args_validate(struct args_struct *args)
 {
-	if (!args->V && !args->f)
+	if (args->V)
+		return 1;
+
+	if (!args->f1)
 		return 0;
 
-	int output_cnt = args->b + args->c + args->C + args->d + args->x + args->o;
+	int output_cnt = args->b + args->c + args->C + args->d + args->o + args->x;
 	if (output_cnt > 1)
 		return 0;
 	
@@ -66,58 +25,78 @@ int args_validate(struct args_struct *args)
 	return 1;
 }
 
+static inline int __args_compare(char *arg, char *short_name, char *long_name)
+{
+	return !strcmp(arg, short_name) || !strcmp(arg, long_name);
+}
+
+static inline int __parse_int(char *arg, int lbound, int ubound, int *res)
+{
+	for (int i = 0; arg[i]; i++)
+	{
+		if (arg[i] < '0' || arg[i] > '9')
+			return 0;
+	}
+
+	int n = atoi(arg);
+	if (n < lbound || n > ubound)
+		return 0;
+
+	*res = n;
+	return 1;
+}
+
 int args_init(struct args_struct *args, int argc, char **argv)
 {
 	for(int i = 1; i < argc; i++)
 	{
-		if (argv[i][0] != '-')
+		// main arguments.
+		if (__args_compare(argv[i], "-b", "--one-byte-octal"))
+			args->b = 1;
+
+		else if (__args_compare(argv[i], "-c", "--one-byte-char"))
+			args->c = 1;
+
+		else if (__args_compare(argv[i], "-C", "--canonical"))
+			args->C = 1;
+
+		else if (__args_compare(argv[i], "-d", "--two-bytes-decimal"))
+			args->d = 1;
+
+		else if (__args_compare(argv[i], "-n", "--length"))
 		{
-			if (!args_set_f(args, argv[i]))
+			if (i+1 >= argc || !__parse_int(argv[i], 0, INT_MAX, &args->n))
 				return 0;
 
-			continue;
 		}
 
-		if (strlen(argv[i]) != 2)
-			return 0;
+		else if (__args_compare(argv[i], "-o", "--two-bytes-octal"))
+			args->o = 1;
 
-
-		switch (argv[i][1])
+		else if (__args_compare(argv[i], "-s", "--skip"))
 		{
-			case 'V':
-				args->V = 1; break;
-
-			case 'd':
-				args->d = 1; break;
-
-			case 'c':
-				args->c = 1; break;
-
-			case 'D':
-				if (i+1 > argc || !args_set_D(args, argv[i+1]))
-					return 0;
-				break;
-
-			case 'o':
-				args->o = 1; break;
-
-			case 'C':
-				args->C = 1; break;
-
-			case 'b':
-				args->b = 1; break;
-
-			case 'x':
-				args->x = 1; break;
-
-			case 'n':
-				if (i+1 > argc || !args_set_n(args, argv[i+1]))
-					return 0;
-				break;
-
-			default:
+			if (i+1 >= argc || !__parse_int(argv[i], 0, INT_MAX, &args->s))
 				return 0;
 		}
+
+		else if (__args_compare(argv[i], "-x", "--two-bytes-hex"))
+			args->x = 1;
+
+		else if (__args_compare(argv[i], "-V", "--version"))
+			args->V = 1;
+
+		// extra arguments.
+		else if (__args_compare(argv[i], "-D", "--difference"))
+		{
+			if (i+1 >= argc)
+				return 0;
+
+			args->f2 = argv[++i];
+		}
+
+		// if the argument matches nothing, then it must be a filename.
+		else
+			args->f1 = argv[i];
 	}
 
 	return args_validate(args);

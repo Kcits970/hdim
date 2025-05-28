@@ -10,13 +10,12 @@ static inline char __to_printable(char ch)
 	return '.';
 }
 
-int dump_buf(struct args_struct *args, char *out)
+int dump_buf(FILE *f, struct args_struct *args, char *out)
 {
 	static char buf[1024];
 	static char tmp[16];
 	static const char *space = "                ";
 
-	FILE *f = args->f;
 	int read_sz = fread(buf, sizeof(char), 1024, f);
 	int off = 0, write_sz = 0;
 
@@ -80,15 +79,18 @@ int dump_buf(struct args_struct *args, char *out)
 	return read_sz;
 }
 
-int dump_part(struct args_struct *args)
+int dump_part(FILE *f, struct args_struct *args)
 {
 	static char buf[8192];
+	static int row;
 
-	int read_sz = dump_buf(args, buf);
-	int off = 0, write_sz = 0, row = 0;
+	int read_sz = dump_buf(f, args, buf);
+	int off = 0, write_sz = 0;
 
 	while (off < read_sz)
 	{
+		printf("%08x ", row);
+
 		for (int i = 0; i < 16;)
 		{
 			if (args->b)
@@ -100,6 +102,7 @@ int dump_part(struct args_struct *args)
 			else if (args->c)
 			{
 				putchar(*(buf+write_sz));
+				putchar(' ');
 				i++, write_sz++;
 			}
 
@@ -136,6 +139,7 @@ int dump_part(struct args_struct *args)
 
 		putchar('\n');
 		off += 16;
+		row += 16;
 	}
 
 	return read_sz;
@@ -143,5 +147,12 @@ int dump_part(struct args_struct *args)
 
 void dump(struct args_struct *args)
 {
-	while (dump_part(args));
+	FILE *f = fopen(args->f1, "r");
+	if (!f)
+	{
+		perror("fopen");
+		return;
+	}
+
+	while (dump_part(f, args));
 }

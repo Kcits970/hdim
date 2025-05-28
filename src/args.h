@@ -1,12 +1,10 @@
 #ifndef ARGS_H
 #define ARGS_H
 
-#include <stdio.h>
-
 struct args_struct
 {
-	FILE *f, *D;
-	int V, d, c, o, C, b, x, n, s;
+	char *f1, *f2;
+	int b, c, C, d, n, o, s, x, V;
 };
 
 int args_init(struct args_struct*, int, char**);
