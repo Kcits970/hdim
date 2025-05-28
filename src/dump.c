@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "args.h"
 #include "dump.h"
+#include "util.h"
 
 static inline char __to_printable(char ch)
 {
@@ -15,16 +16,18 @@ int dump_buf(FILE *f, struct args_struct *args, char *out)
 	static char buf[1024];
 	static char tmp[16];
 	static const char *space = "                ";
+	static int acc; // accumulation count.
 
-	int read_sz = fread(buf, sizeof(char), 1024, f);
+	int read_sz = fread(buf, sizeof(char), imin2(args->n-acc, 1024), f);
 	int off = 0, write_sz = 0;
+	acc += read_sz;
 
 	if (read_sz & 1)
 		buf[read_sz] = 0;
 
 	while (off < read_sz)
 	{
-		int len = read_sz-off >= 16 ? 16 : read_sz-off;
+		int len = imin2(read_sz-off, 16);
 		for (int i = 0; i < 16;)
 		{
 			if (args->b)
@@ -151,6 +154,12 @@ void dump(struct args_struct *args)
 	if (!f)
 	{
 		perror("fopen");
+		return;
+	}
+
+	if (fseek(f, args->s, SEEK_SET))
+	{
+		perror("fseek");
 		return;
 	}
 

@@ -19,8 +19,8 @@ int args_validate(struct args_struct *args)
 	if (!output_cnt)
 		args->x = 1;
 
-	if (args->n && args->s)
-		return 0;
+	if (!args->n)
+		args->n = INT_MAX;
 
 	return 1;
 }
@@ -65,7 +65,7 @@ int args_init(struct args_struct *args, int argc, char **argv)
 
 		else if (__args_compare(argv[i], "-n", "--length"))
 		{
-			if (i+1 >= argc || !__parse_int(argv[i], 0, INT_MAX, &args->n))
+			if (++i >= argc || !__parse_int(argv[i], 0, INT_MAX, &args->n))
 				return 0;
 
 		}
@@ -75,7 +75,7 @@ int args_init(struct args_struct *args, int argc, char **argv)
 
 		else if (__args_compare(argv[i], "-s", "--skip"))
 		{
-			if (i+1 >= argc || !__parse_int(argv[i], 0, INT_MAX, &args->s))
+			if (++i >= argc || !__parse_int(argv[i], 0, INT_MAX, &args->s))
 				return 0;
 		}
 
