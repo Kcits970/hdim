@@ -22,6 +22,6 @@ int main(int argc, char **argv)
 	return 0;
 
 bad_usage:
-	fprintf(stderr, "Usage: ./hdim [-V] <filename> [-b|-c|-C|-d|-o|-x] [-n|-s]\n");
+	fprintf(stderr, "Usage: ./hdim [-V] <filename> [-b|-c|-C|-d|-o|-x] [-n <length>] [-s <skip>]\n");
 	return 1;
 }
