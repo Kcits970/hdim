@@ -2,6 +2,8 @@
 #include "args.h"
 #include "dump.h"
 #include "util.h"
+#include "checksum.h"
+#include "byte_sequence.h"
 
 static inline char __to_printable(char ch)
 {
@@ -150,7 +152,7 @@ int dump_part(FILE *f, struct args_struct *args)
 
 void dump(struct args_struct *args)
 {
-	FILE *f = fopen(args->f1, "r");
+	FILE *f = fopen(args->f1, "rb");
 	if (!f)
 	{
 		perror("fopen");
@@ -164,4 +166,35 @@ void dump(struct args_struct *args)
 	}
 
 	while (dump_part(f, args));
+
+	//sha 256 출력
+	//./hdim -S ->파일의 sha256값 출력
+    if (args->sha) {
+        rewind(f);
+        putchar('\n');
+        sha256(f);     // void sha256(FILE *f) — 파일 전체 해시
+        putchar('\n');
+    }
+	//md5 출력
+	//./hdim -M ->파일의 md5값 출력
+    if (args->md) {
+        rewind(f);
+        putchar('\n');
+        md5(f);        // void md5(FILE *f)
+        putchar('\n');
+    }
+    //바이트 시퀀스 탐색
+    if (args->find) {
+        rewind(f);
+        putchar('\n');
+        find_byte_sequence(f, args->pattern);  // offset을 출력만
+        putchar('\n');
+    }
+	//파일 hex값 중 바이트 시퀀스 탐색 -> 쓸모 없을 듯
+	/*
+    if (args->findHex) {
+        rewind(f);
+        find_hex_sequence(f, args->pattern);  // offset을 출력만
+        putchar('\n');
+    }*/
 }

@@ -1,3 +1,7 @@
+/*
+기능 안쓴다함
+*/
+
 #ifndef CHANGE_ENDIAN_H
 #define CHANGE_ENDIAN_H
 

@@ -1,7 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "dump.h"
+#include "args.h"
 
+int main(int argc, char **argv)
+{
+	struct args_struct args;
+	memset(&args, 0, sizeof(args));
+
+	if (!args_init(&args, argc, argv))
 		goto bad_usage;
 
 	if (args.V)
@@ -10,16 +18,10 @@
 		return 0;
 	}
 
+	dump(&args);
 	return 0;
 
-
 bad_usage:
-	fprintf(stderr, "Usage: ./hdim [-V] <filename> [-b|-c|-C|-d|-o|-x] [-n <length>] [-s <skip>]\n");
-	return 1;
-
-bad_usage_find:
-	fprintf(stderr, "Usage: ./hdim <file> --find <keyword>\n");
+	fprintf(stderr, "Usage: ./hdim [-V] <filename> [-b|-c|-C|-d|-o|-x|-M|-S|-F] [-n <length>] [-s <skip>] [-F <keyword>]\n");
 	return 1;
 }
-
-

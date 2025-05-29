@@ -1,3 +1,6 @@
+/*
+기능 안쓴다함
+*/
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
