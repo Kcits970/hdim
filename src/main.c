@@ -1,67 +1,20 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
-#include <string.h>
-#include "byte_sequence.h"
-#include "checksum.h"
-#include "change_endian.h"
 
-int main(int argc, char **argv)
-{
-	if (argc < 2)
 		goto bad_usage;
 
-	FILE *f = fopen(argv[1], "r");
-	if (!f)
+	if (args.V)
 	{
-		fprintf(stderr, "./hdim: ");
-		perror(argv[1]);
-		return 1;
+		puts("hdim (hexdump-improved) 1.0.0");
+		return 0;
 	}
 
-	for (int i = 2; i < argc; ++i)
-    {
-        if (strncmp(argv[i], "--", 2) == 0)
-        {
-            if (strcmp(argv[i] + 2, "find") == 0)
-            {
-                if (i + 1 < argc)
-                {
-                    find_byte_sequence(f, argv[i + 1]);
-                }
-                else
-                {
-                    goto bad_usage_find;
-                }
-            }
-            if (strcmp(argv[i] + 2, "sha256") == 0)
-            {
-                sha256(f);
-                
-            }
-            if (strcmp(argv[i] + 2, "md5") == 0)
-            {
-                md5(f);
-                
-            }
-            if (strcmp(argv[i] + 2, "endian") == 0) {
-                if (i + 1 < argc) {
-                    if (strcmp(argv[i + 1], "big_endian") == 0) {
-                        print_as_endian(f, 2, 1);
-                    } else if (strcmp(argv[i + 1], "little_endian") == 0) {
-                        print_as_endian(f, 2, 0);
-                    }
-                }
-            }
-
-        }
-    }
-
-	fclose(f);
 	return 0;
 
 
 bad_usage:
-	fprintf(stderr, "Usage: ./hdim <file>\n");
+	fprintf(stderr, "Usage: ./hdim [-V] <filename> [-b|-c|-C|-d|-o|-x] [-n <length>] [-s <skip>]\n");
 	return 1;
 
 bad_usage_find:

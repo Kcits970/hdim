@@ -2,7 +2,10 @@
 #define DUMP_H
 
 #include <stdio.h>
+#include <stdlib.h> 
+#include <string.h> 
+#include "args.h"
 
-void dump(FILE*);
+void dump(struct args_struct*);
 
 #endif
