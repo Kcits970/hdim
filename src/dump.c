@@ -17,7 +17,7 @@ int dump_buf(FILE *f, struct args_struct *args, char *out)
 {
 	static char buf[1024];
 	static char tmp[16];
-	static const char *space = "				";
+	static const char *space = "        ";
 	static int acc; // accumulation count.
 
 	int read_sz = fread(buf, sizeof(char), imin2(args->n-acc, 1024), f);
