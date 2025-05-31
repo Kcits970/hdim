@@ -94,7 +94,7 @@ int dump_part(FILE *f, struct args_struct *args)
 
 	while (off < read_sz)
 	{
-		printf("%08x ", row);
+		printf("%08x ", row+args->s);
 
 		for (int i = 0; i < 16;)
 		{
@@ -152,10 +152,28 @@ int dump_part(FILE *f, struct args_struct *args)
 
 void dump(struct args_struct *args)
 {
+	if (args->V)
+	{
+		puts("hdim (hexdump-improved) 1.0.0");
+		return;
+	}
+
 	FILE *f = fopen(args->f1, "rb");
 	if (!f)
 	{
 		perror("fopen");
+		return;
+	}
+
+	if (args->M)
+	{
+		md5(f);
+		return;
+	}
+
+	if (args->S)
+	{
+		sha256(f);
 		return;
 	}
 
@@ -167,27 +185,9 @@ void dump(struct args_struct *args)
 
 	while (dump_part(f, args));
 
-	if (args->sha)
-	{
-		rewind(f);
-		putchar('\n');
-		sha256(f);
-		putchar('\n');
-	}
-
-	if (args->md)
-	{
-		rewind(f);
-		putchar('\n');
-		md5(f);
-		putchar('\n');
-	}
-
 	if (args->F)
 	{
 		rewind(f);
-		putchar('\n');
 		find_byte_sequence(f, args->pattern);
-		putchar('\n');
 	}
 }

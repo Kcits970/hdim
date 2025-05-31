@@ -12,6 +12,12 @@ int args_validate(struct args_struct *args)
 	if (!args->f1)
 		return 0;
 
+	if (args->M != args->S)
+		return 1;
+
+	if (args->M && args->S)
+		return 0;
+
 	int output_cnt = args->b + args->c + args->C + args->d + args->o + args->x;
 	if (output_cnt > 1)
 		return 0;
@@ -93,11 +99,11 @@ int args_init(struct args_struct *args, int argc, char **argv)
 			args->f2 = argv[++i];
 		}
 
-		else if (__args_compare(argv[i], "-S", "--sha256"))
-			args->sha = 1;
-
 		else if (__args_compare(argv[i], "-M", "--md5"))
-			args->md  = 1;
+			args->M = 1;
+
+		else if (__args_compare(argv[i], "-S", "--sha256"))
+			args->S = 1;
 		
 		else if (__args_compare(argv[i], "-F", "--find"))
 		{
