@@ -67,7 +67,6 @@ int args_init(struct args_struct *args, int argc, char **argv)
 		{
 			if (++i >= argc || !__parse_int(argv[i], 0, INT_MAX, &args->n))
 				return 0;
-
 		}
 
 		else if (__args_compare(argv[i], "-o", "--two-bytes-octal"))
@@ -94,26 +93,20 @@ int args_init(struct args_struct *args, int argc, char **argv)
 			args->f2 = argv[++i];
 		}
 
-
-		// extra: sha256, md5, find
-        else if (__args_compare(argv[i], "-S", "--sha256")) {
+		else if (__args_compare(argv[i], "-S", "--sha256"))
 			args->sha = 1;
-		}
-        else if (__args_compare(argv[i], "-M", "--md5"))    {
+
+		else if (__args_compare(argv[i], "-M", "--md5"))
 			args->md  = 1;
+		
+		else if (__args_compare(argv[i], "-F", "--find"))
+		{
+			if (i+1 >= argc)
+				return 0;
+
+			args->F = 1;
+			args->pattern = argv[++i];
 		}
-		//ex) -F hello test.txt
-        else if (__args_compare(argv[i], "-F", "--find")) {
-            if (++i >= argc) return 0;
-            args->find = 1;
-            args->pattern = argv[i];
-        }
-		/*
-		else if (__args_compare(argv[i], "-FH", "--findHex")) {
-            if (++i >= argc) return 0;
-            args->findHex = 1;
-            args->pattern = argv[i];
-        }*/
 
 		// if the argument matches nothing, then it must be a filename.
 		else

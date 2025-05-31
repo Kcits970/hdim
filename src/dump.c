@@ -17,7 +17,7 @@ int dump_buf(FILE *f, struct args_struct *args, char *out)
 {
 	static char buf[1024];
 	static char tmp[16];
-	static const char *space = "                ";
+	static const char *space = "				";
 	static int acc; // accumulation count.
 
 	int read_sz = fread(buf, sizeof(char), imin2(args->n-acc, 1024), f);
@@ -167,34 +167,27 @@ void dump(struct args_struct *args)
 
 	while (dump_part(f, args));
 
-	//sha 256 출력
-	//./hdim -S ->파일의 sha256값 출력
-    if (args->sha) {
-        rewind(f);
-        putchar('\n');
-        sha256(f);     // void sha256(FILE *f) — 파일 전체 해시
-        putchar('\n');
-    }
-	//md5 출력
-	//./hdim -M ->파일의 md5값 출력
-    if (args->md) {
-        rewind(f);
-        putchar('\n');
-        md5(f);        // void md5(FILE *f)
-        putchar('\n');
-    }
-    //바이트 시퀀스 탐색
-    if (args->find) {
-        rewind(f);
-        putchar('\n');
-        find_byte_sequence(f, args->pattern);  // offset을 출력만
-        putchar('\n');
-    }
-	//파일 hex값 중 바이트 시퀀스 탐색 -> 쓸모 없을 듯
-	/*
-    if (args->findHex) {
-        rewind(f);
-        find_hex_sequence(f, args->pattern);  // offset을 출력만
-        putchar('\n');
-    }*/
+	if (args->sha)
+	{
+		rewind(f);
+		putchar('\n');
+		sha256(f);
+		putchar('\n');
+	}
+
+	if (args->md)
+	{
+		rewind(f);
+		putchar('\n');
+		md5(f);
+		putchar('\n');
+	}
+
+	if (args->F)
+	{
+		rewind(f);
+		putchar('\n');
+		find_byte_sequence(f, args->pattern);
+		putchar('\n');
+	}
 }
