@@ -13,16 +13,15 @@ static inline char __to_printable(char ch)
 	return '.';
 }
 
-int dump_buf(FILE *f, struct args_struct *args, char *out)
+static char space[8192];
+
+int dump_buf(FILE *f, struct args_struct *args, char *out, int from)
 {
 	static char buf[1024];
 	static char tmp[16];
-	static const char *space = "        ";
-	static int acc; // accumulation count.
 
-	int read_sz = fread(buf, sizeof(char), imin2(args->n-acc, 1024), f);
+	int read_sz = fread(buf, sizeof(char), imin2(args->n-from, 1024), f);
 	int off = 0, write_sz = 0;
-	acc += read_sz;
 
 	if (read_sz & 1)
 		buf[read_sz] = 0;
@@ -84,62 +83,203 @@ int dump_buf(FILE *f, struct args_struct *args, char *out)
 	return read_sz;
 }
 
-int dump_part(FILE *f, struct args_struct *args)
+int dump_line(struct args_struct *args, const char *buf, int from)
+{	
+	for (int i = 0; i < 16;)
+	{
+		if (args->b)
+		{
+			printf("%.3s ", buf+from);
+			i++, from+=3;
+		}
+
+		else if (args->c)
+		{
+			putchar(buf[from]);
+			putchar(' ');
+			i++, from++;
+		}
+
+		else if (args->C || args->x)
+		{
+			printf("%.4s ", buf+from);
+			i+=2, from+=4;
+		}
+
+		else if (args->d)
+		{
+			printf("%.5s ", buf+from);
+			i+=2, from+=5;
+		}
+
+		else if (args->o)
+		{
+			printf("%.6s ", buf+from);
+			i+=2, from+=6;
+		}
+
+		else
+		{
+			// execution will never reach this point.
+		}
+	}
+
+	if (args->C)
+	{
+		printf("| ");
+		for (int i = 0; i < 16; i++)
+			putchar(buf[from++]);
+
+		putchar(' ');
+	}
+
+	return from;
+}
+
+int dump_part(FILE *f, struct args_struct *args, int from)
 {
 	static char buf[8192];
-	static int row;
 
-	int read_sz = dump_buf(f, args, buf);
+	int read_sz = dump_buf(f, args, buf, from);
 	int off = 0, write_sz = 0;
+	int row = from/16*16;
 
 	while (off < read_sz)
 	{
-		printf("%08x ", row+args->s);
+		printf("%08x ", row + args->s);
+		write_sz = dump_line(args, buf, write_sz);
+		putchar('\n');
 
-		for (int i = 0; i < 16;)
+		off += 16;
+		row += 16;
+	}
+
+	return read_sz;
+}
+
+#define RED "\033[31m"
+#define BOLD "\033[1m"
+#define RESET "\033[0m"
+
+int dump_line_diff(struct args_struct *args, const char *buf, const char *cmp, int from)
+{
+	for (int i = 0; i < 16;)
+	{
+		if (args->b)
 		{
-			if (args->b)
-			{
-				printf("%.3s ", buf+write_sz);
-				i++, write_sz+=3;
-			}
+			if (memcmp(buf+from, cmp+from, 3))
+				printf(BOLD RED);
 
-			else if (args->c)
-			{
-				putchar(*(buf+write_sz));
-				putchar(' ');
-				i++, write_sz++;
-			}
-
-			else if (args->C || args->x)
-			{
-				printf("%.4s ", buf+write_sz);
-				i+=2, write_sz+=4;
-			}
-
-			else if (args->d)
-			{
-				printf("%.5s ", buf+write_sz);
-				i+=2, write_sz+=5;
-			}
-
-			else if (args->o)
-			{
-				printf("%.6s ", buf+write_sz);
-				i+=2, write_sz+=6;
-			}
-
-			else
-			{
-				// execution will never reach this point.
-			}
+			printf("%.3s ", buf+from);
+			i++, from+=3;
 		}
 
-		if (args->C)
+		else if (args->c)
 		{
+			if (buf[from] != cmp[from])
+				printf(BOLD RED);
+
+			putchar(buf[from]);
+			putchar(' ');
+			i++, from++;
+		}
+
+		else if (args->C || args->x)
+		{
+			if (memcmp(buf+from, cmp+from, 4))
+				printf(BOLD RED);
+
+			printf("%.4s ", buf+from);
+			i+=2, from+=4;
+		}
+
+		else if (args->d)
+		{
+			if (memcmp(buf+from, cmp+from, 5))
+				printf(BOLD RED);
+			
+			printf("%.5s ", buf+from);
+			i+=2, from+=5;
+		}
+
+		else if (args->o)
+		{
+			if (memcmp(buf+from, cmp+from, 6))
+				printf(BOLD RED);
+
+			printf("%.6s ", buf+from);
+			i+=2, from+=6;
+		}
+
+		else
+		{
+			// execution will never reach this point.
+		}
+
+		printf(RESET);
+	}
+
+	if (args->C)
+	{
+		printf("| ");
+
+		for (int i = 0; i < 16; i++)
+		{
+			if (buf[from] != cmp[from])
+				printf(BOLD RED);
+
+			putchar(buf[from++]);
+			printf(RESET);
+		}
+
+		putchar(' ');
+	}
+
+	return from;
+}
+
+int dump_diff(FILE *f1, FILE *f2, struct args_struct *args, int from)
+{
+	static char buf1[8192];
+	static char buf2[8192];
+
+	int read_sz1 = dump_buf(f1, args, buf1, from);
+	int read_sz2 = dump_buf(f2, args, buf2, from);
+	int read_sz = imin2(read_sz1, read_sz2);
+	int read_sz_max = imax2(read_sz1, read_sz2);
+	int off = 0, write_sz = 0, write_sz2 = 0;
+	int row = from/16*16;
+
+	while (off < read_sz)
+	{
+		printf("%08x ", row + args->s);
+		dump_line_diff(args, buf1, buf2, write_sz);
+		printf("| ");
+		write_sz = dump_line_diff(args, buf2, buf1, write_sz);
+		putchar('\n');
+
+		off += 16;
+		row += 16;
+	}
+
+	while (off < read_sz_max)
+	{
+		printf("%08x ", row + args->s);
+
+		if (read_sz1 == read_sz_max)
+		{
+			write_sz = dump_line_diff(args, buf1, space, write_sz);
+			printf(RESET);
 			printf("| ");
-			for (int i = 0; i < 16; i++)
-				putchar(*(buf+write_sz++));
+			dump_line(args, space, 0);
+		}
+		else
+		{
+			dump_line(args, space, 0);
+			printf("| ");
+			printf(BOLD RED);
+			write_sz = dump_line_diff(args, buf2, space, write_sz);
+			printf(RESET);
 		}
 
 		putchar('\n');
@@ -147,7 +287,7 @@ int dump_part(FILE *f, struct args_struct *args)
 		row += 16;
 	}
 
-	return read_sz;
+	return read_sz_max;
 }
 
 void dump(struct args_struct *args)
@@ -158,36 +298,38 @@ void dump(struct args_struct *args)
 		return;
 	}
 
-	FILE *f = fopen(args->f1, "rb");
-	if (!f)
+	FILE *f1 = args->f1;
+	FILE *f2 = args->f2;
+	memset(space, ' ', sizeof(space));
+
+	if (args->F)
 	{
-		perror("fopen");
+		find_byte_sequence(f1, args->pattern);
 		return;
 	}
 
 	if (args->M)
 	{
-		md5(f);
+		md5(f1);
 		return;
 	}
 
 	if (args->S)
 	{
-		sha256(f);
+		sha256(f1);
 		return;
 	}
 
-	if (fseek(f, args->s, SEEK_SET))
+	if (f2)
 	{
-		perror("fseek");
-		return;
+		int from = 0, sz;
+		while (sz = dump_diff(f1, f2, args, from))
+			from += sz;
 	}
-
-	while (dump_part(f, args));
-
-	if (args->F)
+	else
 	{
-		rewind(f);
-		find_byte_sequence(f, args->pattern);
+		int from = 0, sz;
+		while (sz = dump_part(f1, args, from))
+			from += sz;
 	}
 }

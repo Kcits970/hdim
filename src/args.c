@@ -4,12 +4,33 @@
 #include <limits.h>
 #include "args.h"
 
+FILE *fopen_shift(const char *fn, int s)
+{
+	FILE *f = fopen(fn, "rb");
+	if (!f)
+	{
+		perror("fopen");
+		return 0;
+	}
+
+	if (fseek(f, s, SEEK_SET))
+	{
+		perror("fseek");
+		return 0;
+	}
+
+	return f;
+}
+
 int args_validate(struct args_struct *args)
 {
 	if (args->V)
 		return 1;
 
-	if (!args->f1)
+	if (!args->fn1 || !(args->f1 = fopen_shift(args->fn1, args->s)))
+		return 0;
+
+	if (args->fn2 && !(args->f2 = fopen_shift(args->fn2, args->s)))
 		return 0;
 
 	if (args->M != args->S)
@@ -96,7 +117,7 @@ int args_init(struct args_struct *args, int argc, char **argv)
 			if (i+1 >= argc)
 				return 0;
 
-			args->f2 = argv[++i];
+			args->fn2 = argv[++i];
 		}
 
 		else if (__args_compare(argv[i], "-M", "--md5"))
@@ -116,7 +137,7 @@ int args_init(struct args_struct *args, int argc, char **argv)
 
 		// if the argument matches nothing, then it must be a filename.
 		else
-			args->f1 = argv[i];
+			args->fn1 = argv[i];
 	}
 
 	return args_validate(args);

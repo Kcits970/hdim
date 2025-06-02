@@ -4,6 +4,9 @@
 struct args_struct
 {
 	/*
+	 * fn1: main filename.
+	 * fn2: filename for difference comparison.
+	 *
 	 * b: --one-byte-octal
 	 * c: --one-byte-char
 	 * C: --canonical
@@ -18,7 +21,8 @@ struct args_struct
 	 * F: --find
 	 */
 
-	char *f1, *f2;
+	char *fn1, *fn2;
+	FILE *f1, *f2;
 	int b, c, C, d, n, o, s, x, V, S, M, F;
 	char *pattern;
 };
