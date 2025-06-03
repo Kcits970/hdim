@@ -62,13 +62,7 @@ static inline int __args_compare(char *arg, char *short_name, char *long_name)
 
 static inline int __parse_int(char *arg, int lbound, int ubound, int *res)
 {
-	for (int i = 0; arg[i]; i++)
-	{
-		if (arg[i] < '0' || arg[i] > '9')
-			return 0;
-	}
-
-	int n = atoi(arg);
+	int n = strtol(arg, 0, 0);
 	if (n < lbound || n > ubound)
 		return 0;
 
