@@ -163,3 +163,12 @@ int args_init(struct args_struct *args, int argc, char **argv)
 
 	return args_validate(args);
 }
+
+void args_cleanup(struct args_struct *args)
+{
+	if (args->f1)
+		fclose(args->f1);
+
+	if (args->f2)
+		fclose(args->f2);
+}

@@ -87,7 +87,7 @@ void find_byte_sequence(FILE *f, struct args_struct *args)
 	static char buf[1024];
 
 	int len = strlen(args->pat);
-	char *pat = malloc(len);
+	char *pat = malloc(len+1);
 	int *lps = malloc(len * sizeof(int));
 
 	if (args->F)

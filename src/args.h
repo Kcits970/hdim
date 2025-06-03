@@ -28,6 +28,7 @@ struct args_struct
 	int b, c, C, d, n, o, s, x, V, S, M, F, F8, F16;
 };
 
-int args_init(struct args_struct*, int, char**);
+int args_init(struct args_struct *, int, char **);
+void args_cleanup(struct args_struct *);
 
 #endif

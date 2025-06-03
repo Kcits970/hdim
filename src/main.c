@@ -13,6 +13,7 @@ int main(int argc, char **argv)
 		goto bad_usage;
 
 	dump(&args);
+	args_cleanup(&args);
 	return 0;
 
 bad_usage:
