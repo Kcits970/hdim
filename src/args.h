@@ -19,12 +19,13 @@ struct args_struct
 	 * M: --md5
 	 * S: --sha256
 	 * F: --find
+	 * F8: --find-octal
+	 * F16: --find-hex
 	 */
 
-	char *fn1, *fn2;
+	char *fn1, *fn2, *pat;
 	FILE *f1, *f2;
-	int b, c, C, d, n, o, s, x, V, S, M, F;
-	char *pattern;
+	int b, c, C, d, n, o, s, x, V, S, M, F, F8, F16;
 };
 
 int args_init(struct args_struct*, int, char**);

@@ -1,127 +1,126 @@
-// byte_sequence.h
-#ifndef BYTE_SEQUENCE_H
-#define BYTE_SEQUENCE_H
-
-#include <stdio.h>
-
-// -F: raw byte sequence search (KMP)
-void find_byte_sequence(FILE *f, const char *keyword);
-// -FH: search in hex representation of file contents
-void find_hex_sequence(FILE *f, const char *keyword);
-
-#endif // BYTE_SEQUENCE_H
-
-
-// byte_sequence.c
-#include "byte_sequence.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <ctype.h>
+#include "args.h"
+#include "util.h"
 
-#define BUF_SZ 1024
-static unsigned char buf[BUF_SZ];
-
-// 헥사 문자열을 바이트 배열로 변환 (예: "ab cd" → {0xab, 0xcd})
-static size_t parse_keyword(const char *keyword, unsigned char *pattern) {
-    const char *p = keyword;
-    size_t len = 0;
-    // 헥사 모드
-    while (*p) {
-        while (*p && isspace((unsigned char)*p)) p++;
-        if (!*p) break;
-        if (!isxdigit((unsigned char)p[0]) || !isxdigit((unsigned char)p[1])) { len = 0; break; }
-        unsigned int byte;
-        sscanf(p, "%2x", &byte);
-        pattern[len++] = (unsigned char)byte;
-        p += 2;
-    }
-    if (len > 0) return len;
-    // ASCII 모드
-    len = strlen(keyword);
-    for (size_t i = 0; i < len; i++) pattern[i] = (unsigned char)keyword[i];
-    return len;
+static inline int isodigit(int c)
+{
+	return c >= '0' && c <= '8';
 }
 
-// KMP 실패함수
-static void compute_kmp_table(const unsigned char *pattern, size_t m, int *lps) {
-    int length = 0;
-    lps[0] = 0;
-    for (size_t i = 1; i < m; ) {
-        if (pattern[i] == pattern[length])
-            lps[i++] = ++length;
-        else if (length)
-            length = lps[length - 1];
-        else
-            lps[i++] = 0;
-    }
+static inline int ctoi(int c)
+{
+	if (c >= '0' && c <= '9')
+		return c-'0';
+
+	if (c >= 'A' && c <= 'F')
+		return c-'A'+10;
+
+	if (c >= 'a' && c <= 'f')
+		return c-'a'+10;
+
+	return -1;
 }
 
-// -F: raw bytes
-void find_byte_sequence(FILE *f, const char *keyword) {
-    unsigned char pattern[BUF_SZ];
-    size_t plen = parse_keyword(keyword, pattern);
-    if (plen == 0) { fprintf(stderr, "Invalid pattern input.\n"); return; }
-    int *lps = malloc(sizeof(int) * plen);
-    if (!lps) { fprintf(stderr, "Memory allocation failed.\n"); return; }
-    compute_kmp_table(pattern, plen, lps);
+int parse_bytes(const char *str, char *res, int base)
+{
+	const char *s = str;
+	int len = 0;
 
-    size_t nread = 0, total = 0;
-    int j = 0;
-    while ((nread = fread(buf, 1, BUF_SZ, f)) > 0) {
-        for (size_t i = 0; i < nread; ++i) {
-            while (j > 0 && buf[i] != pattern[j]) j = lps[j - 1];
-            if (buf[i] == pattern[j]) j++;
-            if (j == (int)plen) {
-                size_t off = total + i - plen + 1;
-                printf("[+] Pattern found at offset 0x%08zx\n", off);
-                j = lps[j - 1];
-            }
-        }
-        total += nread;
-    }
-    free(lps);
-    rewind(f);
+	while (s[0])
+	{
+		if (isspace(s[0]))
+		{
+			s++;
+			continue;
+		}
+
+		if (base == 16)
+		{
+			if (!isxdigit(s[0]) || !isxdigit(s[1]))
+				return -1;
+
+			res[len++] = ctoi(s[0]) << 4 | ctoi(s[1]);
+			s += 2;
+		}
+
+		// base 8 (octal).
+		else
+		{
+			if (!isodigit(s[0]) || !isodigit(s[1]) || !isodigit(s[2]))
+				return -1;
+
+			res[len++] = ctoi(s[0]) << 6 | ctoi(s[1]) << 3 | ctoi(s[2]);
+			s += 3;
+		}
+	}
+
+	return len;
 }
 
-// -FH: search in hex string
-void find_hex_sequence(FILE *f, const char *keyword) {
-    // 준비: 키워드 소문자화
-    size_t klen = strlen(keyword);
-    char *key = malloc(klen + 1);
-    for (size_t i = 0; i < klen; ++i) key[i] = tolower((unsigned char)keyword[i]);
-    key[klen] = '\0';
+// kmp pre-computation.
+void build_lps(const char *str, int str_len, int *lps)
+{
+	// str_len: length of 'str'.
+	// len: length of currently tracking prefix/suffix.
+	
+	int len = 0;
+	lps[0] = 0;
 
-    // 파일 전체 읽기
-    fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    unsigned char *data = malloc(fsize);
-    if (!data) { perror("malloc"); free(key); return; }
-    fread(data, 1, fsize, f);
+	for (int i = 1; i < str_len;)
+	{
+		if (str[i] == str[len])
+			lps[i++] = ++len;
 
-    // 헥사 문자열 생성
-    char *hex = malloc(fsize * 2 + 1);
-    for (long i = 0; i < fsize; ++i)
-        sprintf(hex + i*2, "%02x", data[i]);
-    hex[fsize*2] = '\0';
+		else if (len)
+			len = lps[len-1];
 
-    // 검색
-    char *p = hex;
-    while ((p = strstr(p, key)) != NULL) {
-        size_t pos = p - hex;
-        size_t off = pos / 2;
-        size_t row = off / 16;
-        size_t col = off % 16;
-        printf("[+] HEX pattern '%s' at offset 0x%08zx (row:%zu, col:%zu)\n",
-               keyword, off, row, col);
-        p += 1;
-    }
+		else
+			lps[i++] = 0;
+	}
+}
 
-    // 정리
-    free(hex);
-    free(data);
-    free(key);
-    rewind(f);
+void find_byte_sequence(FILE *f, struct args_struct *args)
+{
+	static char buf[1024];
+
+	int len = strlen(args->pat);
+	char *pat = malloc(len);
+	int *lps = malloc(len * sizeof(int));
+
+	if (args->F)
+		strcpy(pat, args->pat);
+
+	else
+		len = parse_bytes(args->pat, pat, args->F8 ? 8 : 16);
+
+	if (len <= 0)
+		goto cleanup;
+
+	build_lps(pat, len, lps);
+
+	int read_sz, off = args->s, j = 0;
+	while (read_sz = fread(buf, 1, imin2(args->n-off, 1024), f))
+	{
+		for (int i = 0; i < read_sz; i++, off++)
+		{
+			while (j && buf[i] != pat[j])
+				j = lps[j - 1];
+
+			if (buf[i] == pat[j])
+				j++;
+
+			if (j == len)
+			{
+				printf("Found matching pattern at 0x%08x\n", off-len+1);
+				j = lps[j - 1];
+			}
+		}
+	}
+
+cleanup:
+	free(pat);
+	free(lps);
 }

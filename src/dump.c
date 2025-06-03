@@ -302,9 +302,9 @@ void dump(struct args_struct *args)
 	FILE *f2 = args->f2;
 	memset(space, ' ', sizeof(space));
 
-	if (args->F)
+	if (args->F || args->F8 || args->F16)
 	{
-		find_byte_sequence(f1, args->pattern);
+		find_byte_sequence(f1, args);
 		return;
 	}
 

@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 
-void find_byte_sequence(FILE *f,char *keyword);
-void find_hex_sequence(FILE *f, char *keyword);
+void find_byte_sequence(FILE *, struct args_struct *);
 
 #endif
