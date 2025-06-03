@@ -1,0 +1,8 @@
+#include <stdio.h>
+
+int main()
+{
+	const char *hello = "hello\n";
+	fwrite(hello, sizeof(char), 6, stdout);
+	return 0;
+}
