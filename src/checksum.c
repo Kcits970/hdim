@@ -4,10 +4,6 @@
 #include <stdint.h>
 #include <string.h>
 
-// ---------------------------
-// MD5 구현 (RFC 1321 기반)
-// ---------------------------
-
 #define F(x, y, z) ((x & y) | (~x & z))
 #define G(x, y, z) ((x & z) | (y & ~z))
 #define H(x, y, z) (x ^ y ^ z)
@@ -102,9 +98,6 @@ void md5(FILE *f) {
                (state[i] >> 24) & 0xff);
     printf("\n");
 }
-
-
-
 
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
 #define CH(x,y,z) (((x) & (y)) ^ (~(x) & (z)))
