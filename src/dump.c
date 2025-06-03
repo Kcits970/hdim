@@ -324,12 +324,6 @@ void dump(struct args_struct *args)
 	FILE *f2 = args->f2;
 	memset(space, ' ', sizeof(space));
 
-	if (args->F || args->F8 || args->F16)
-	{
-		find_byte_sequence(f1, args);
-		return;
-	}
-
 	if (args->M)
 	{
 		md5(f1);
@@ -339,6 +333,12 @@ void dump(struct args_struct *args)
 	if (args->S)
 	{
 		sha256(f1);
+		return;
+	}
+
+	if (args->F || args->F8 || args->F16)
+	{
+		find_byte_sequence(f1, args);
 		return;
 	}
 

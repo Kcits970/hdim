@@ -30,9 +30,6 @@ int args_validate(struct args_struct *args)
 	if (!args->fn1 || !(args->f1 = fopen_shift(args->fn1, args->s)))
 		return 0;
 
-	if (args->F + args->F8 + args->F16 > 1)
-		return 0;
-
 	if (args->fn2 && !(args->f2 = fopen_shift(args->fn2, args->s)))
 		return 0;
 
@@ -40,6 +37,9 @@ int args_validate(struct args_struct *args)
 		return 1;
 
 	if (args->M && args->S)
+		return 0;
+
+	if (args->F + args->F8 + args->F16 > 1)
 		return 0;
 
 	int output_cnt = args->b + args->c + args->C + args->d + args->o + args->x;
