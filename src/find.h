@@ -1,5 +1,5 @@
-#ifndef BYTE_SEQUENCE_H
-#define BYTE_SEQUENCE_H
+#ifndef FIND_H
+#define FIND_H
 
 #include <stdio.h>
 

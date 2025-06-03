@@ -3,7 +3,7 @@
 #include "dump.h"
 #include "util.h"
 #include "checksum.h"
-#include "byte_sequence.h"
+#include "find.h"
 
 static inline char __to_printable(char ch)
 {
