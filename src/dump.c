@@ -44,7 +44,14 @@ int dump_buf(FILE *f, struct args_struct *args, char *out, int from)
 				i++;
 			}
 
-			else if (args->C || args->x)
+			else if (args->C)
+			{
+				sprintf(tmp, "%02x", (unsigned int) buf[off+i]);
+				sprintf(out+write_sz, "%.2s", i < len ? tmp : space);
+				i++, write_sz+=2;
+			}
+
+			else if (args->x)
 			{
 				sprintf(tmp, "%04x", (unsigned int) buf[off+i+1] << 8 | buf[off+i]);
 				sprintf(out+write_sz, "%.4s", i < len ? tmp : space);
@@ -100,7 +107,13 @@ int dump_line(struct args_struct *args, const char *buf, int from)
 			i++, from++;
 		}
 
-		else if (args->C || args->x)
+		else if (args->C)
+		{
+			printf("%.2s ", buf+from);
+			i++, from+=2;
+		}
+
+		else if (args->x)
 		{
 			printf("%.4s ", buf+from);
 			i+=2, from+=4;
@@ -184,7 +197,16 @@ int dump_line_diff(struct args_struct *args, const char *buf, const char *cmp, i
 			i++, from++;
 		}
 
-		else if (args->C || args->x)
+		else if (args->C)
+		{
+			if (memcmp(buf+from, cmp+from, 2))
+				printf(BOLD RED);
+
+			printf("%.2s ", buf+from);
+			i++, from+=2;
+		}
+
+		else if (args->x)
 		{
 			if (memcmp(buf+from, cmp+from, 4))
 				printf(BOLD RED);
